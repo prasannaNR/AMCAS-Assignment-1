@@ -1,0 +1,47 @@
+// Task 3
+.include 45nm_bulk.txt
+.param VDD=1.1 VBL=1.1
+Vdd vdd 0 'VDD'
+Vwl wl 0 PWL(0 0 1n 0 1.05n 'VDD')
+MP1 qb q vdd vdd pmos W=0.15u L=0.045u
+MN1 qb q 0 0 nmos W=0.20u L=0.045u
+MP2 q qb vdd vdd pmos W=0.15u L=0.045u
+MN2 q qb 0 0 nmos W=0.20u L=0.045u
+MA1 bl wl q 0 nmos W=0.16u L=0.045u
+MA2 blb wl qb 0 nmos W=0.16u L=0.045u
+Cbl bl 0 180f IC='VBL'
+Cblb blb 0 180f IC='VBL'
+.ic v(q)=0 v(qb)='VDD'
+.control
+* i = 10..0  ->  VDD = 0.6 + 0.05*i  (1.1 V down to 0.6 V)
+let i = 10
+while i >= 0
+  let vdd_val = 0.6 + 0.05 * i
+  alterparam VDD = $&vdd_val
+  alterparam VBL = $&vdd_val
+  reset
+  tran 5p 4n uic
+  let diff_v = v(blb) - v(bl)
+  meas tran dv find diff_v at=2.0n
+  meas tran qmax MAX v(q) FROM=1n TO=4n
+  echo SWEEP_POINT vdd = $&vdd_val
+  let i = i - 1
+end
+* Extension below the required 0.6V floor: locate where dV crosses the
+* 25 mV sense-amp offset (VDD = 0.55 ... 0.40 V).
+let i = -1
+while i >= -4
+  let vdd_val = 0.6 + 0.05 * i
+  alterparam VDD = $&vdd_val
+  alterparam VBL = $&vdd_val
+  reset
+  tran 5p 4n uic
+  let diff_v = v(blb) - v(bl)
+  meas tran dv find diff_v at=2.0n
+  meas tran qmax MAX v(q) FROM=1n TO=4n
+  echo SWEEP_POINT vdd = $&vdd_val
+  let i = i - 1
+end
+quit
+.endc
+.end
